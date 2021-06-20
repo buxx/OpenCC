@@ -1328,12 +1328,13 @@ impl MainState {
                     let selected_squad_id = selected_squad_ids.first().unwrap();
                     let squad = self.get_squad(selected_squad_id);
                     let leader = self.get_scene_item(squad.leader);
+                    let scene_cursor_point = &scene_point_from_window_point(
+                        &self.current_cursor_point,
+                        &self.display_offset,
+                    );
                     let angle_ = angle(
+                        scene_cursor_point,
                         &leader.position,
-                        &scene_point_from_window_point(
-                            &self.current_cursor_point,
-                            &self.display_offset,
-                        ),
                     );
                     let sprite_info = OrderMarker::Defend(leader.id, angle_).sprite_info();
                     let draw_param = sprite_info.as_draw_params(
