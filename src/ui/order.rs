@@ -1,6 +1,6 @@
 use crate::behavior::order::Order;
 use crate::config::{UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH};
-use crate::{Angle, SceneItemId, ScenePoint, Offset};
+use crate::{Angle, Offset, SceneItemId, ScenePoint};
 use ggez::graphics;
 use ggez::mint::Point2;
 
@@ -164,6 +164,7 @@ impl OrderMarkerSpriteInfo {
         &self,
         draw_to_scene_point: &ScenePoint,
         angle: Angle,
+        offset: Option<Offset>,
     ) -> graphics::DrawParam {
         graphics::DrawParam::new()
             .src(graphics::Rect::new(
@@ -174,7 +175,7 @@ impl OrderMarkerSpriteInfo {
             ))
             .dest(draw_to_scene_point.clone())
             .rotation(angle)
-            .offset(Offset::new(0.5, 0.5))
+            .offset(offset.unwrap_or(Offset::new(0.5, 0.5)))
     }
 
     pub fn rectangle(&self, from_scene_point: &ScenePoint) -> graphics::Rect {

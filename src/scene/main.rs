@@ -1336,8 +1336,11 @@ impl MainState {
                         ),
                     );
                     let sprite_info = OrderMarker::Defend(leader.id, angle_).sprite_info();
-                    let draw_param = sprite_info
-                        .as_draw_params(&leader.position, angle_);
+                    let draw_param = sprite_info.as_draw_params(
+                        &leader.position,
+                        angle_,
+                        Some(Offset::new(0.5, 1.5)),
+                    );
                     self.ui_batch.add(draw_param);
                 }
                 SceneItemPrepareOrder::Hide(_) => {}
@@ -1352,11 +1355,11 @@ impl MainState {
             let draw_to_scene_point = self.get_order_marker_scene_point(&order_marker);
             let angle = self.get_order_marker_angle(&order_marker);
 
-            self.ui_batch.add(
-                order_marker
-                    .sprite_info()
-                    .as_draw_params(&draw_to_scene_point, angle),
-            );
+            self.ui_batch.add(order_marker.sprite_info().as_draw_params(
+                &draw_to_scene_point,
+                angle,
+                None,
+            ));
         }
 
         Ok(())
