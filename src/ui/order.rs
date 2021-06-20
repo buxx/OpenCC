@@ -1,6 +1,6 @@
 use crate::behavior::order::Order;
 use crate::config::{UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH};
-use crate::{SceneItemId, ScenePoint, Angle};
+use crate::{Angle, SceneItemId, ScenePoint, Offset};
 use ggez::graphics;
 use ggez::mint::Point2;
 
@@ -8,12 +8,12 @@ const ORDER_MARKER_START_X: f32 = 0.0;
 const ORDER_MARKER_START_Y: f32 = 100.0;
 const ORDER_MARKER_WIDTH: f32 = 11.0;
 const ORDER_MARKER_HEIGHT: f32 = 11.0;
-const ORDER_MARKER_DEFEND_START_Y: f32 = 180.0;
-const ORDER_MARKER_DEFEND_WIDTH: f32 = 20.0;
-const ORDER_MARKER_DEFEND_HEIGHT: f32 = 7.0;
+const ORDER_MARKER_DEFEND_START_Y: f32 = 200.0;
+const ORDER_MARKER_DEFEND_WIDTH: f32 = 50.0;
+const ORDER_MARKER_DEFEND_HEIGHT: f32 = 17.0;
 const ORDER_MARKER_HIDE_START_Y: f32 = 170.0;
-const ORDER_MARKER_HIDE_WIDTH: f32 = 20.0;
-const ORDER_MARKER_HIDE_HEIGHT: f32 = 7.0;
+const ORDER_MARKER_HIDE_WIDTH: f32 = 50.0;
+const ORDER_MARKER_HIDE_HEIGHT: f32 = 17.0;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum OrderMarker {
@@ -37,12 +37,8 @@ impl OrderMarker {
             Order::HideTo(move_to_scene_point) => {
                 OrderMarker::HideTo(scene_item_id, *move_to_scene_point)
             }
-            Order::Defend(angle) => {
-                OrderMarker::Defend(scene_item_id, *angle)
-            }
-            Order::Hide(angle) => {
-                OrderMarker::Hide(scene_item_id, *angle)
-            }
+            Order::Defend(angle) => OrderMarker::Defend(scene_item_id, *angle),
+            Order::Hide(angle) => OrderMarker::Hide(scene_item_id, *angle),
         }
     }
 
@@ -52,7 +48,9 @@ impl OrderMarker {
             | OrderMarker::MoveFastTo(_, scene_point)
             | OrderMarker::HideTo(_, scene_point)
             | OrderMarker::FireTo(_, scene_point) => *scene_point,
-            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {panic!("Should be called !")}
+            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {
+                panic!("Should be called !")
+            }
         }
     }
     pub fn get_scene_item_id(&self) -> SceneItemId {
@@ -75,7 +73,9 @@ impl OrderMarker {
                 scene_point.x = new_scene_point.x;
                 scene_point.y = new_scene_point.y
             }
-            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {panic!("Should not be called !")}
+            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {
+                panic!("Should not be called !")
+            }
         }
     }
 
@@ -143,7 +143,7 @@ impl OrderMarker {
                 height: ORDER_MARKER_HIDE_HEIGHT,
                 half_width: ORDER_MARKER_HIDE_WIDTH / 2.0,
                 half_height: ORDER_MARKER_HIDE_HEIGHT / 2.0,
-            }
+            },
         }
     }
 }
@@ -160,11 +160,11 @@ pub struct OrderMarkerSpriteInfo {
 }
 
 impl OrderMarkerSpriteInfo {
-    pub fn as_draw_params(&self, draw_to_scene_point: &ScenePoint, angle: Angle) -> graphics::DrawParam {
-        let dest_scene_point = ScenePoint::new(
-            draw_to_scene_point.x - (self.width / 2.0),
-            draw_to_scene_point.y - (self.height / 2.0),
-        );
+    pub fn as_draw_params(
+        &self,
+        draw_to_scene_point: &ScenePoint,
+        angle: Angle,
+    ) -> graphics::DrawParam {
         graphics::DrawParam::new()
             .src(graphics::Rect::new(
                 self.relative_start_x,
@@ -172,8 +172,9 @@ impl OrderMarkerSpriteInfo {
                 self.relative_width,
                 self.relative_height,
             ))
-            .dest(dest_scene_point)
+            .dest(draw_to_scene_point.clone())
             .rotation(angle)
+            .offset(Offset::new(0.5, 0.5))
     }
 
     pub fn rectangle(&self, from_scene_point: &ScenePoint) -> graphics::Rect {

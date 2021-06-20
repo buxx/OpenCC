@@ -18,7 +18,14 @@ pub fn vertical_menu_sprite_info(component: &UiComponent) -> VerticalMenuSpriteI
             height: SCENE_ITEM_MENU_HEIGHT,
             item_height: SCENE_ITEM_MENU_ITEM_HEIGHT,
             relative_item_height: SCENE_ITEM_MENU_ITEM_HEIGHT / UI_SPRITE_SHEET_HEIGHT,
-            item_matches: vec![MenuItem::Move, MenuItem::MoveFast, MenuItem::Sneak, MenuItem::Defend, MenuItem::Defend, MenuItem::Sneak],
+            item_matches: vec![
+                MenuItem::Move,
+                MenuItem::MoveFast,
+                MenuItem::Sneak,
+                MenuItem::Defend,
+                MenuItem::Defend,
+                MenuItem::Sneak,
+            ],
         },
     }
 }

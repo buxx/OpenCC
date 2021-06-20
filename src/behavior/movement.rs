@@ -4,7 +4,7 @@ use crate::config::{
     COVER_DISTANCE, MOVE_TO_REACHED_WHEN_DISTANCE_INFERIOR_AT,
     STOP_MOVE_ORDER_IF_UNDER_FIRE_INTENSITY,
 };
-use crate::map::terrain::{TerrainTile, grid_points_for_square};
+use crate::map::terrain::{grid_points_for_square, TerrainTile};
 use crate::map::Map;
 use crate::physics::path::find_path;
 use crate::physics::util::{grid_point_from_scene_point, scene_point_from_grid_point};
@@ -32,7 +32,9 @@ pub fn digest_next_move_order(
             Order::MoveTo(_) => ItemBehavior::MoveTo(move_to_scene_point, grid_path),
             Order::MoveFastTo(_) => ItemBehavior::MoveFastTo(move_to_scene_point, grid_path),
             Order::HideTo(_) => ItemBehavior::HideTo(move_to_scene_point, grid_path),
-            _ => {panic!("this code should be called only with move order")}
+            _ => {
+                panic!("this code should be called only with move order")
+            }
         };
         scene_item_modifiers.push(SceneItemModifier::SwitchToNextOrder);
         scene_item_modifiers.push(SceneItemModifier::ChangeBehavior(behavior));
@@ -102,7 +104,8 @@ pub fn find_cover_grid_point(
             .get(&(from_grid_point.x as u32, from_grid_point.y as u32))
             .unwrap(),
     )];
-    let grid_points_for_square = grid_points_for_square(&from_grid_point, COVER_DISTANCE, COVER_DISTANCE);
+    let grid_points_for_square =
+        grid_points_for_square(&from_grid_point, COVER_DISTANCE, COVER_DISTANCE);
     for grid_point in grid_points_for_square {
         if let Some(tile) = map
             .terrain

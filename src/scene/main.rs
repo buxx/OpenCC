@@ -44,8 +44,10 @@ use crate::ui::order::OrderMarker;
 use crate::ui::vertical_menu::vertical_menu_sprite_info;
 use crate::ui::{CursorImmobile, Dragging, MenuItem};
 use crate::ui::{SceneItemPrepareOrder, UiComponent, UserEvent};
-use crate::{scene, FrameI, Message, Meters, Offset, SceneItemId, ScenePoint, SquadId, WindowPoint, Angle};
 use crate::util::angle;
+use crate::{
+    scene, Angle, FrameI, Message, Meters, Offset, SceneItemId, ScenePoint, SquadId, WindowPoint,
+};
 
 #[derive(PartialEq)]
 enum DebugTerrain {
@@ -569,7 +571,9 @@ impl MainState {
                             Order::HideTo(_) => {
                                 Some(SceneItemPrepareOrder::Sneak(scene_item.squad_id))
                             }
-                            _ => {panic!("Not Implemented")}
+                            _ => {
+                                panic!("Not Implemented")
+                            }
                         }
                     }
                 }
@@ -734,7 +738,9 @@ impl MainState {
                         SceneItemPrepareOrder::Move(_) => Order::MoveTo(*scene_click_point),
                         SceneItemPrepareOrder::MoveFast(_) => Order::MoveFastTo(*scene_click_point),
                         SceneItemPrepareOrder::Sneak(_) => Order::HideTo(*scene_click_point),
-                        _ => {panic!("Should not be here")}
+                        _ => {
+                            panic!("Should not be here")
+                        }
                     };
                     let squad = self.get_squad(squad_id);
                     messages.push(Message::SceneItemMessage(
@@ -1163,8 +1169,12 @@ impl MainState {
                 | OrderMarker::MoveFastTo(scene_item_id, scene_point)
                 | OrderMarker::HideTo(scene_item_id, scene_point)
                 | OrderMarker::FireTo(scene_item_id, scene_point) => (scene_item_id, scene_point),
-                OrderMarker::Defend(_squad_id, _angle) => {panic!("not implemented")}
-                OrderMarker::Hide(_squad_id, _angle) => {panic!("not implemented")}
+                OrderMarker::Defend(_squad_id, _angle) => {
+                    panic!("not implemented")
+                }
+                OrderMarker::Hide(_squad_id, _angle) => {
+                    panic!("not implemented")
+                }
             };
             // And check if cursor is over it
             if order_marker
@@ -1309,15 +1319,25 @@ impl MainState {
     fn generate_prepare_order_sprites(&mut self) -> GameResult {
         if let Some(prepare_order) = &self.scene_item_prepare_order {
             match prepare_order {
-                SceneItemPrepareOrder::Move(_) | SceneItemPrepareOrder::MoveFast(_) | SceneItemPrepareOrder::Sneak(_) => {}
+                SceneItemPrepareOrder::Move(_)
+                | SceneItemPrepareOrder::MoveFast(_)
+                | SceneItemPrepareOrder::Sneak(_) => {}
                 SceneItemPrepareOrder::Defend(_) => {
                     // FIXME BS NOW: manage multiple select squad ?
                     let selected_squad_ids = self.get_selected_squad_ids();
                     let selected_squad_id = selected_squad_ids.first().unwrap();
                     let squad = self.get_squad(selected_squad_id);
                     let leader = self.get_scene_item(squad.leader);
-                    let angle_ = angle(&leader.position, &scene_point_from_window_point(&self.current_cursor_point, &self.display_offset));
-                    let draw_param = OrderMarker::Defend(leader.id, angle_).sprite_info().as_draw_params(&leader.position, angle_);
+                    let angle_ = angle(
+                        &leader.position,
+                        &scene_point_from_window_point(
+                            &self.current_cursor_point,
+                            &self.display_offset,
+                        ),
+                    );
+                    let sprite_info = OrderMarker::Defend(leader.id, angle_).sprite_info();
+                    let draw_param = sprite_info
+                        .as_draw_params(&leader.position, angle_);
                     self.ui_batch.add(draw_param);
                 }
                 SceneItemPrepareOrder::Hide(_) => {}
@@ -1348,8 +1368,7 @@ impl MainState {
             | OrderMarker::MoveFastTo(_, scene_point)
             | OrderMarker::HideTo(_, scene_point)
             | OrderMarker::FireTo(_, scene_point) => scene_point.clone(),
-            OrderMarker::Defend(squad_id, _angle) |
-            OrderMarker::Hide(squad_id, _angle) => {
+            OrderMarker::Defend(squad_id, _angle) | OrderMarker::Hide(squad_id, _angle) => {
                 let squad = self.get_squad(squad_id);
                 let leader = self.get_scene_item(squad.leader);
                 leader.position
@@ -1363,10 +1382,7 @@ impl MainState {
             | OrderMarker::MoveFastTo(_, _)
             | OrderMarker::HideTo(_, _)
             | OrderMarker::FireTo(_, _) => 0.0,
-            OrderMarker::Defend(_, angle) |
-            OrderMarker::Hide(_, angle) => {
-                *angle
-            }
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => *angle,
         }
     }
 
@@ -1688,7 +1704,9 @@ impl MainState {
                         SceneItemPrepareOrder::Move(_) => graphics::BLUE,
                         SceneItemPrepareOrder::MoveFast(_) => graphics::MAGENTA,
                         SceneItemPrepareOrder::Sneak(_) => graphics::YELLOW,
-                        _ => {panic!("Should not be here")}
+                        _ => {
+                            panic!("Should not be here")
+                        }
                     };
 
                     let scene_item = self.get_squad_leader(squad_id);
