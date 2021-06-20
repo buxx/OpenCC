@@ -381,9 +381,9 @@ pub fn apply_scene_item_modifier(
             MainStateModifier::SquadLeaderIndicateMove(scene_item.id),
         )),
         SceneItemModifier::SetIsLeader => scene_item.is_leader = true,
-        SceneItemModifier::LeaderIndicateTakeCover => {
-            messages.push(MainStateMessage(MainStateModifier::LeaderIndicateTakeCover(scene_item.id)))
-        }
+        SceneItemModifier::LeaderIndicateTakeCover => messages.push(MainStateMessage(
+            MainStateModifier::LeaderIndicateTakeCover(scene_item.id),
+        )),
     }
 
     messages

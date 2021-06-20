@@ -5,7 +5,7 @@ pub mod order;
 pub mod vertical_menu;
 
 const SCENE_ITEM_MENU_WIDTH: f32 = 71.0;
-const SCENE_ITEM_MENU_HEIGHT: f32 = 68.0;
+const SCENE_ITEM_MENU_HEIGHT: f32 = 90.0;
 const SCENE_ITEM_MENU_ITEM_HEIGHT: f32 = 15.0;
 
 pub enum UiComponent {
@@ -36,6 +36,8 @@ pub enum SceneItemPrepareOrder {
     // FIXME BS NOW: SquadId
     Move(SquadId),
     MoveFast(SquadId),
+    Sneak(SquadId),
+    Defend(SquadId),
     Hide(SquadId),
 }
 
@@ -43,5 +45,7 @@ pub enum SceneItemPrepareOrder {
 pub enum MenuItem {
     Move,
     MoveFast,
+    Sneak,
+    Defend,
     Hide,
 }

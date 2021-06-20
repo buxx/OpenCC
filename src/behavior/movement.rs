@@ -32,6 +32,7 @@ pub fn digest_next_move_order(
             Order::MoveTo(_) => ItemBehavior::MoveTo(move_to_scene_point, grid_path),
             Order::MoveFastTo(_) => ItemBehavior::MoveFastTo(move_to_scene_point, grid_path),
             Order::HideTo(_) => ItemBehavior::HideTo(move_to_scene_point, grid_path),
+            _ => {panic!("this code should be called only with move order")}
         };
         scene_item_modifiers.push(SceneItemModifier::SwitchToNextOrder);
         scene_item_modifiers.push(SceneItemModifier::ChangeBehavior(behavior));
@@ -57,8 +58,8 @@ pub fn digest_move_behavior(
 
         // Note: angle computed by adding FRAC_PI_2 because sprites are north oriented
         scene_item_modifiers.push(SceneItemModifier::ChangeDisplayAngle(angle(
-            going_to_scene_point,
-            scene_item.position,
+            &going_to_scene_point,
+            &scene_item.position,
         )));
 
         // Check if scene_point reached

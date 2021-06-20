@@ -1,4 +1,5 @@
 pub mod animate;
+pub mod defend;
 pub mod engagement;
 pub mod movement;
 pub mod order;

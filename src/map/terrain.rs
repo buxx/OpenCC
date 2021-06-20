@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::physics::GridPoint;
 use ggez::{GameError, GameResult};
 use tiled::{Image as TiledImage, Layer, PropertyValue, Tileset};
-use crate::physics::GridPoint;
 
 #[derive(Clone)]
 pub enum TerrainTileId {

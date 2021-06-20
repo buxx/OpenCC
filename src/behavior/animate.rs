@@ -1,3 +1,4 @@
+use crate::behavior::defend::{digest_defend_order, digest_hide_order};
 use crate::behavior::engagement::digest_engage_scene_item_behavior;
 use crate::behavior::movement::{
     digest_move_behavior, digest_next_move_order, digest_stop_move_behavior,
@@ -23,6 +24,12 @@ pub fn digest_next_order(scene_item: &SceneItem, map: &Map) -> Vec<SceneItemModi
                     next_order,
                     map,
                 ));
+            }
+            Order::Defend(angle) => {
+                scene_item_modifiers.extend(digest_defend_order(scene_item, angle, map))
+            }
+            Order::Hide(angle) => {
+                scene_item_modifiers.extend(digest_hide_order(scene_item, angle, map))
             }
         }
     }

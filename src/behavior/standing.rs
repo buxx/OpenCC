@@ -13,8 +13,8 @@ pub fn digest_standing_behavior(scene_item: &SceneItem, _map: &Map) -> Vec<Scene
             ItemBehavior::EngageSceneItem(visibility.to_scene_item_id.expect("visible_scene_items_visibilities must return only visibilities with to_scene_item_id")),
         ));
         scene_item_modifiers.push(SceneItemModifier::ChangeDisplayAngle(angle(
-            visibility.to_scene_point,
-            scene_item.position,
+            &visibility.to_scene_point,
+            &scene_item.position,
         )));
     }
 

@@ -12,6 +12,6 @@ pub fn velocity_for_behavior(behavior: &ItemBehavior) -> Option<f32> {
     }
 }
 
-pub fn angle(to_point: ScenePoint, from_point: ScenePoint) -> Angle {
+pub fn angle(to_point: &ScenePoint, from_point: &ScenePoint) -> Angle {
     f32::atan2(to_point.y - from_point.y, to_point.x - from_point.x) + FRAC_PI_2
 }

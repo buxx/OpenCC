@@ -44,9 +44,8 @@ use crate::ui::order::OrderMarker;
 use crate::ui::vertical_menu::vertical_menu_sprite_info;
 use crate::ui::{CursorImmobile, Dragging, MenuItem};
 use crate::ui::{SceneItemPrepareOrder, UiComponent, UserEvent};
-use crate::{
-    scene, FrameI, Message, Meters, Offset, SceneItemId, ScenePoint, SquadId, WindowPoint,
-};
+use crate::{scene, FrameI, Message, Meters, Offset, SceneItemId, ScenePoint, SquadId, WindowPoint, Angle};
+use crate::util::angle;
 
 #[derive(PartialEq)]
 enum DebugTerrain {
@@ -499,7 +498,7 @@ impl MainState {
                     // For all move orders
                     if let Some(SceneItemPrepareOrder::Move(_))
                     | Some(SceneItemPrepareOrder::MoveFast(_))
-                    | Some(SceneItemPrepareOrder::Hide(_)) = &self.scene_item_prepare_order
+                    | Some(SceneItemPrepareOrder::Sneak(_)) = &self.scene_item_prepare_order
                     {
                         // Draw path finding must be from squad. By default,
                         // found path from selected squads
@@ -542,7 +541,7 @@ impl MainState {
                     // If user preparing move order
                     if let Some(SceneItemPrepareOrder::Move(_))
                     | Some(SceneItemPrepareOrder::MoveFast(_))
-                    | Some(SceneItemPrepareOrder::Hide(_)) = &self.scene_item_prepare_order
+                    | Some(SceneItemPrepareOrder::Sneak(_)) = &self.scene_item_prepare_order
                     {
                         // Require find path drawing in 250ms
                         let waiting_cursor_not_move =
@@ -568,8 +567,9 @@ impl MainState {
                                 Some(SceneItemPrepareOrder::MoveFast(scene_item.squad_id))
                             }
                             Order::HideTo(_) => {
-                                Some(SceneItemPrepareOrder::Hide(scene_item.squad_id))
+                                Some(SceneItemPrepareOrder::Sneak(scene_item.squad_id))
                             }
+                            _ => {panic!("Not Implemented")}
                         }
                     }
                 }
@@ -676,6 +676,16 @@ impl MainState {
                                 self.squad_menu = None;
                             }
 
+                            MenuItem::Sneak => {
+                                self.scene_item_prepare_order =
+                                    Some(SceneItemPrepareOrder::Sneak(*squad_id));
+                                self.squad_menu = None;
+                            }
+                            MenuItem::Defend => {
+                                self.scene_item_prepare_order =
+                                    Some(SceneItemPrepareOrder::Defend(*squad_id));
+                                self.squad_menu = None;
+                            }
                             MenuItem::Hide => {
                                 self.scene_item_prepare_order =
                                     Some(SceneItemPrepareOrder::Hide(*squad_id));
@@ -719,11 +729,12 @@ impl MainState {
                 // Preparing move order
                 SceneItemPrepareOrder::Move(squad_id)
                 | SceneItemPrepareOrder::MoveFast(squad_id)
-                | SceneItemPrepareOrder::Hide(squad_id) => {
+                | SceneItemPrepareOrder::Sneak(squad_id) => {
                     let order = match scene_item_prepare_order {
                         SceneItemPrepareOrder::Move(_) => Order::MoveTo(*scene_click_point),
                         SceneItemPrepareOrder::MoveFast(_) => Order::MoveFastTo(*scene_click_point),
-                        SceneItemPrepareOrder::Hide(_) => Order::HideTo(*scene_click_point),
+                        SceneItemPrepareOrder::Sneak(_) => Order::HideTo(*scene_click_point),
+                        _ => {panic!("Should not be here")}
                     };
                     let squad = self.get_squad(squad_id);
                     messages.push(Message::SceneItemMessage(
@@ -737,6 +748,12 @@ impl MainState {
                         )),
                     ));
                     self.current_prepare_move_found_paths = HashMap::new();
+                }
+                SceneItemPrepareOrder::Defend(squad_id) => {
+                    // FIXME BS NOW: recup l'angle avec le curseur et go new order
+                }
+                SceneItemPrepareOrder::Hide(squad_id) => {
+                    // FIXME BS NOW: recup l'angle avec le curseur et go new order
                 }
             }
 
@@ -973,11 +990,13 @@ impl MainState {
                         for (member_id, formation_position) in
                             squad.member_positions(&leader.position, leader.display_angle)
                         {
-                            if let Some((cover_grid_point, debug_grid_points)) = find_cover_grid_point(
-                                &grid_point_from_scene_point(&formation_position, &self.map),
-                                &self.map,
-                                &already_used_cover_grid_points,
-                            ) {
+                            if let Some((cover_grid_point, debug_grid_points)) =
+                                find_cover_grid_point(
+                                    &grid_point_from_scene_point(&formation_position, &self.map),
+                                    &self.map,
+                                    &already_used_cover_grid_points,
+                                )
+                            {
                                 for debug_grid_point in debug_grid_points.iter() {
                                     new_messages.push(Message::MainStateMessage(
                                         MainStateModifier::NewDebugPoint(DebugPoint {
@@ -1144,6 +1163,8 @@ impl MainState {
                 | OrderMarker::MoveFastTo(scene_item_id, scene_point)
                 | OrderMarker::HideTo(scene_item_id, scene_point)
                 | OrderMarker::FireTo(scene_item_id, scene_point) => (scene_item_id, scene_point),
+                OrderMarker::Defend(_squad_id, _angle) => {panic!("not implemented")}
+                OrderMarker::Hide(_squad_id, _angle) => {panic!("not implemented")}
             };
             // And check if cursor is over it
             if order_marker
@@ -1285,22 +1306,68 @@ impl MainState {
         Ok(())
     }
 
+    fn generate_prepare_order_sprites(&mut self) -> GameResult {
+        if let Some(prepare_order) = &self.scene_item_prepare_order {
+            match prepare_order {
+                SceneItemPrepareOrder::Move(_) | SceneItemPrepareOrder::MoveFast(_) | SceneItemPrepareOrder::Sneak(_) => {}
+                SceneItemPrepareOrder::Defend(_) => {
+                    // FIXME BS NOW: manage multiple select squad ?
+                    let selected_squad_ids = self.get_selected_squad_ids();
+                    let selected_squad_id = selected_squad_ids.first().unwrap();
+                    let squad = self.get_squad(selected_squad_id);
+                    let leader = self.get_scene_item(squad.leader);
+                    let angle_ = angle(&leader.position, &scene_point_from_window_point(&self.current_cursor_point, &self.display_offset));
+                    let draw_param = OrderMarker::Defend(leader.id, angle_).sprite_info().as_draw_params(&leader.position, angle_);
+                    self.ui_batch.add(draw_param);
+                }
+                SceneItemPrepareOrder::Hide(_) => {}
+            }
+        }
+
+        Ok(())
+    }
+
     fn generate_order_marker_sprites(&mut self) -> GameResult {
         for order_marker in self.order_markers.iter() {
-            let draw_to_scene_point = match &order_marker {
-                OrderMarker::MoveTo(_, scene_point)
-                | OrderMarker::MoveFastTo(_, scene_point)
-                | OrderMarker::HideTo(_, scene_point)
-                | OrderMarker::FireTo(_, scene_point) => scene_point,
-            };
+            let draw_to_scene_point = self.get_order_marker_scene_point(&order_marker);
+            let angle = self.get_order_marker_angle(&order_marker);
+
             self.ui_batch.add(
                 order_marker
                     .sprite_info()
-                    .as_draw_params(draw_to_scene_point),
+                    .as_draw_params(&draw_to_scene_point, angle),
             );
         }
 
         Ok(())
+    }
+
+    fn get_order_marker_scene_point(&self, order_marker: &OrderMarker) -> ScenePoint {
+        match &order_marker {
+            OrderMarker::MoveTo(_, scene_point)
+            | OrderMarker::MoveFastTo(_, scene_point)
+            | OrderMarker::HideTo(_, scene_point)
+            | OrderMarker::FireTo(_, scene_point) => scene_point.clone(),
+            OrderMarker::Defend(squad_id, _angle) |
+            OrderMarker::Hide(squad_id, _angle) => {
+                let squad = self.get_squad(squad_id);
+                let leader = self.get_scene_item(squad.leader);
+                leader.position
+            }
+        }
+    }
+
+    fn get_order_marker_angle(&self, order_marker: &OrderMarker) -> Angle {
+        match &order_marker {
+            OrderMarker::MoveTo(_, _)
+            | OrderMarker::MoveFastTo(_, _)
+            | OrderMarker::HideTo(_, _)
+            | OrderMarker::FireTo(_, _) => 0.0,
+            OrderMarker::Defend(_, angle) |
+            OrderMarker::Hide(_, angle) => {
+                *angle
+            }
+        }
     }
 
     fn update_interior_sprites(&mut self) -> GameResult {
@@ -1429,7 +1496,7 @@ impl MainState {
 
             // Draw selection area on all order marker and hover
             for order_marker in self.order_markers.iter() {
-                let order_marker_position = order_marker.get_scene_point();
+                let order_marker_position = self.get_order_marker_scene_point(order_marker);
                 let order_marker_sprite = order_marker.sprite_info();
                 mesh_builder.rectangle(
                     DrawMode::stroke(1.0),
@@ -1616,11 +1683,12 @@ impl MainState {
             match scene_item_prepare_order {
                 SceneItemPrepareOrder::Move(squad_id)
                 | SceneItemPrepareOrder::MoveFast(squad_id)
-                | SceneItemPrepareOrder::Hide(squad_id) => {
+                | SceneItemPrepareOrder::Sneak(squad_id) => {
                     let color = match &scene_item_prepare_order {
                         SceneItemPrepareOrder::Move(_) => graphics::BLUE,
                         SceneItemPrepareOrder::MoveFast(_) => graphics::MAGENTA,
-                        SceneItemPrepareOrder::Hide(_) => graphics::YELLOW,
+                        SceneItemPrepareOrder::Sneak(_) => graphics::YELLOW,
+                        _ => {panic!("Should not be here")}
                     };
 
                     let scene_item = self.get_squad_leader(squad_id);
@@ -1636,6 +1704,7 @@ impl MainState {
                         color,
                     )?;
                 }
+                SceneItemPrepareOrder::Defend(_) | SceneItemPrepareOrder::Hide(_) => {}
             }
         }
 
@@ -1828,7 +1897,7 @@ impl MainState {
             match scene_item_prepare_order {
                 SceneItemPrepareOrder::Move(squad_id)
                 | SceneItemPrepareOrder::MoveFast(squad_id)
-                | SceneItemPrepareOrder::Hide(squad_id) => {
+                | SceneItemPrepareOrder::Sneak(squad_id) => {
                     // FIXME BS: Color depending from distance and weapon
                     let color = graphics::GREEN;
                     let scene_item = self.get_squad_leader(squad_id);
@@ -1847,6 +1916,7 @@ impl MainState {
                         Some(color),
                     ))
                 }
+                SceneItemPrepareOrder::Defend(_) | SceneItemPrepareOrder::Hide(_) => {}
             }
         }
 
@@ -1910,6 +1980,7 @@ impl event::EventHandler for MainState {
 
         self.generate_scene_item_sprites()?;
         self.generate_squad_menu_sprites()?;
+        self.generate_prepare_order_sprites()?;
         self.generate_order_marker_sprites()?;
 
         scene_mesh_builder = self.update_scene_mesh_with_debug(scene_mesh_builder)?;
