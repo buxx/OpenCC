@@ -59,7 +59,7 @@ pub fn digest_move_behavior(
         let going_to_scene_point = scene_point_from_grid_point(going_to_grid_point, &map);
 
         // Note: angle computed by adding FRAC_PI_2 because sprites are north oriented
-        scene_item_modifiers.push(SceneItemModifier::ChangeDisplayAngle(angle(
+        scene_item_modifiers.push(SceneItemModifier::ChangeLookingDirection(angle(
             &going_to_scene_point,
             &scene_item.position,
         )));

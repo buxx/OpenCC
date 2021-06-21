@@ -12,7 +12,7 @@ pub fn digest_standing_behavior(scene_item: &SceneItem, _map: &Map) -> Vec<Scene
         scene_item_modifiers.push(SceneItemModifier::ChangeBehavior(
             ItemBehavior::EngageSceneItem(visibility.to_scene_item_id.expect("visible_scene_items_visibilities must return only visibilities with to_scene_item_id")),
         ));
-        scene_item_modifiers.push(SceneItemModifier::ChangeDisplayAngle(angle(
+        scene_item_modifiers.push(SceneItemModifier::ChangeLookingDirection(angle(
             &visibility.to_scene_point,
             &scene_item.position,
         )));

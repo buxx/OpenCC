@@ -763,11 +763,15 @@ impl MainState {
                         scene_cursor_point,
                         &leader.position,
                     );
-                    // FIXME BS NOW: add then_order
-                    let then_order = match scene_item_prepare_order {
-                        SceneItemPrepareOrder::Defend(_) => {Order::Defend(angle_)}
-                        SceneItemPrepareOrder::Hide(_) => {Order::Hide(angle_)}
-                        _ => {panic!("Should be here")}
+                    // TODO BS: add then_order ? For soldier orientation after move
+                    let (then_order, behavior) = match scene_item_prepare_order {
+                        SceneItemPrepareOrder::Defend(_) => {
+                            (Order::Defend(angle_), ItemBehavior::Standing)
+                        }
+                        SceneItemPrepareOrder::Hide(_) => {
+                            (Order::Hide(angle_), ItemBehavior::Hide)
+                        }
+                        _ => {panic!("Should not be here")}
                     };
 
                     // Compute new places according to defend/hide direction
@@ -776,9 +780,23 @@ impl MainState {
                         angle_,
                         self.frame_i,
                         squad,
-                        &leader.behavior,
+                        &behavior,
                         &self.map,
-                    ))
+                    ));
+                    messages.push(Message::MainStateMessage(
+                        MainStateModifier::NewOrderMarker(OrderMarker::new(
+                            squad.leader,
+                            &then_order,
+                        )),
+                    ));
+                    messages.push(Message::SceneItemMessage(
+                        leader.id,
+                        SceneItemModifier::ChangeBehavior(behavior),
+                    ));
+                    messages.push(Message::SceneItemMessage(
+                        leader.id,
+                        SceneItemModifier::ChangeLookingDirection(angle_),
+                    ));
                 }
             }
 
@@ -950,7 +968,7 @@ impl MainState {
                         let squad = self.get_squad(&scene_item.squad_id);
                         let leader = self.get_scene_item(squad.leader);
                         let formation_positions =
-                            squad.member_positions(&leader.position, leader.display_angle);
+                            squad.member_positions(&leader.position, leader.looking_direction);
                         if squad.leader != scene_item_id {
                             eprintln!("Squad leader taken move must be done by squad leader !")
                         } else {
@@ -1013,7 +1031,7 @@ impl MainState {
                         let squad = self.get_squad(&leader.squad_id);
                         new_messages.extend(take_cover_messages(
                             &leader.position,
-                            leader.display_angle,
+                            leader.looking_direction,
                             self.frame_i,
                             squad,
                             &leader.behavior,
@@ -1522,7 +1540,7 @@ impl MainState {
                 let squad = self.get_squad(&squad_id);
                 let leader = self.get_scene_item(squad.leader);
                 for (_, scene_point) in squad
-                    .member_positions(&leader.position, leader.display_angle)
+                    .member_positions(&leader.position, leader.looking_direction)
                     .iter()
                 {
                     mesh_builder.circle(
