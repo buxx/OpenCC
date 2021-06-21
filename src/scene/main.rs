@@ -14,11 +14,7 @@ use crate::behavior::animate::{digest_behavior, digest_current_order, digest_nex
 use crate::behavior::movement::find_cover_grid_point;
 use crate::behavior::order::Order;
 use crate::behavior::ItemBehavior;
-use crate::config::{
-    ANIMATE_EACH, DISPLAY_OFFSET_BY, DISPLAY_OFFSET_BY_SPEED, INTERIORS_EACH, MAX_FRAME_I,
-    PHYSICS_EACH, SCENE_ITEMS_CHANGE_ERR_MSG, SEEK_EACH, SPRITE_EACH, SQUADS_CHANGE_ERR_MSG,
-    TARGET_FPS, UNDER_FIRE_INTENSITY_DECREMENT,
-};
+use crate::config::{ANIMATE_EACH, DISPLAY_OFFSET_BY, DISPLAY_OFFSET_BY_SPEED, INTERIORS_EACH, MAX_FRAME_I, PHYSICS_EACH, SCENE_ITEMS_CHANGE_ERR_MSG, SEEK_EACH, SPRITE_EACH, SQUADS_CHANGE_ERR_MSG, TARGET_FPS, UNDER_FIRE_INTENSITY_DECREMENT, DISPLAY_DEFEND_Y_OFFSET};
 use crate::gameplay::squad::Squad;
 use crate::gameplay::weapon::{Weapon, WeaponType};
 use crate::map::util::extract_image_from_tileset;
@@ -755,11 +751,32 @@ impl MainState {
                     ));
                     self.current_prepare_move_found_paths = HashMap::new();
                 }
-                SceneItemPrepareOrder::Defend(squad_id) => {
-                    // FIXME BS NOW: recup l'angle avec le curseur et go new order
-                }
-                SceneItemPrepareOrder::Hide(squad_id) => {
-                    // FIXME BS NOW: recup l'angle avec le curseur et go new order
+                SceneItemPrepareOrder::Defend(squad_id) | SceneItemPrepareOrder::Hide(squad_id) => {
+                    let scene_cursor_point = &scene_point_from_window_point(
+                        &self.current_cursor_point,
+                        &self.display_offset,
+                    );
+                    let squad = self.get_squad(squad_id);
+                    let leader = self.get_scene_item(squad.leader);
+                    let angle_ = angle(
+                        scene_cursor_point,
+                        &leader.position,
+                    );
+                    let order = match scene_item_prepare_order {
+                        SceneItemPrepareOrder::Defend(_) => {Order::Defend(angle_)}
+                        SceneItemPrepareOrder::Hide(_) => {Order::Hide(angle_)}
+                        _ => {panic!("Should be here")}
+                    };
+                    messages.push(Message::SceneItemMessage(
+                        squad.leader,
+                        SceneItemModifier::SetNextOrder(order.clone()),
+                    ));
+                    messages.push(Message::MainStateMessage(
+                        MainStateModifier::NewOrderMarker(OrderMarker::new(
+                            squad.leader,
+                            &order,
+                        )),
+                    ));
                 }
             }
 
@@ -1322,7 +1339,7 @@ impl MainState {
                 SceneItemPrepareOrder::Move(_)
                 | SceneItemPrepareOrder::MoveFast(_)
                 | SceneItemPrepareOrder::Sneak(_) => {}
-                SceneItemPrepareOrder::Defend(_) => {
+                SceneItemPrepareOrder::Hide(_) | SceneItemPrepareOrder::Defend(_) => {
                     // FIXME BS NOW: manage multiple select squad ?
                     let selected_squad_ids = self.get_selected_squad_ids();
                     let selected_squad_id = selected_squad_ids.first().unwrap();
@@ -1336,15 +1353,18 @@ impl MainState {
                         scene_cursor_point,
                         &leader.position,
                     );
-                    let sprite_info = OrderMarker::Defend(leader.id, angle_).sprite_info();
+                    let sprite_info = match prepare_order {
+                        SceneItemPrepareOrder::Defend(_) => OrderMarker::Defend(leader.id, angle_).sprite_info(),
+                        SceneItemPrepareOrder::Hide(_) => OrderMarker::Hide(leader.id, angle_).sprite_info(),
+                        _ => {panic!("Should not be here")}
+                    };
                     let draw_param = sprite_info.as_draw_params(
                         &leader.position,
                         angle_,
-                        Some(Offset::new(0.5, 1.5)),
+                        Some(Offset::new(0.5, DISPLAY_DEFEND_Y_OFFSET)),
                     );
                     self.ui_batch.add(draw_param);
                 }
-                SceneItemPrepareOrder::Hide(_) => {}
             }
         }
 
@@ -1355,11 +1375,12 @@ impl MainState {
         for order_marker in self.order_markers.iter() {
             let draw_to_scene_point = self.get_order_marker_scene_point(&order_marker);
             let angle = self.get_order_marker_angle(&order_marker);
+            let offset = self.get_order_marker_offset(&order_marker);
 
             self.ui_batch.add(order_marker.sprite_info().as_draw_params(
                 &draw_to_scene_point,
                 angle,
-                None,
+                offset,
             ));
         }
 
@@ -1377,6 +1398,16 @@ impl MainState {
                 let leader = self.get_scene_item(squad.leader);
                 leader.position
             }
+        }
+    }
+
+    fn get_order_marker_offset(&self, order_marker: &OrderMarker) -> Option<Offset> {
+        match &order_marker {
+            OrderMarker::MoveTo(_, _)
+            | OrderMarker::MoveFastTo(_, _)
+            | OrderMarker::HideTo(_, _)
+            | OrderMarker::FireTo(_, _) => None,
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => Some(Offset::new(0.5, DISPLAY_DEFEND_Y_OFFSET)),
         }
     }
 

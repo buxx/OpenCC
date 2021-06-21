@@ -42,17 +42,6 @@ impl OrderMarker {
         }
     }
 
-    pub fn get_target_scene_point(&self) -> ScenePoint {
-        match self {
-            OrderMarker::MoveTo(_, scene_point)
-            | OrderMarker::MoveFastTo(_, scene_point)
-            | OrderMarker::HideTo(_, scene_point)
-            | OrderMarker::FireTo(_, scene_point) => *scene_point,
-            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {
-                panic!("Should be called !")
-            }
-        }
-    }
     pub fn get_scene_item_id(&self) -> SceneItemId {
         match self {
             OrderMarker::MoveTo(scene_item_id, _)

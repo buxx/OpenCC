@@ -24,7 +24,7 @@ pub fn vertical_menu_sprite_info(component: &UiComponent) -> VerticalMenuSpriteI
                 MenuItem::Sneak,
                 MenuItem::Defend,
                 MenuItem::Defend,
-                MenuItem::Sneak,
+                MenuItem::Hide,
             ],
         },
     }
