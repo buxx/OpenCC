@@ -1,5 +1,5 @@
 use crate::behavior::order::Order;
-use crate::config::{UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH};
+use crate::config::{UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH, DISPLAY_DEFEND_Y_OFFSET};
 use crate::{Angle, Offset, SceneItemId, ScenePoint};
 use ggez::graphics;
 use ggez::mint::Point2;
@@ -39,6 +39,26 @@ impl OrderMarker {
             }
             Order::Defend(angle) => OrderMarker::Defend(scene_item_id, *angle),
             Order::Hide(angle) => OrderMarker::Hide(scene_item_id, *angle),
+        }
+    }
+
+    pub fn get_order_marker_angle(&self) -> Angle {
+        match &self {
+            OrderMarker::MoveTo(_, _)
+            | OrderMarker::MoveFastTo(_, _)
+            | OrderMarker::HideTo(_, _)
+            | OrderMarker::FireTo(_, _) => 0.0,
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => *angle,
+        }
+    }
+
+    pub fn get_order_marker_offset(&self) -> Option<Offset> {
+        match &self {
+            OrderMarker::MoveTo(_, _)
+            | OrderMarker::MoveFastTo(_, _)
+            | OrderMarker::HideTo(_, _)
+            | OrderMarker::FireTo(_, _) => None,
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => Some(Offset::new(0.5, DISPLAY_DEFEND_Y_OFFSET)),
         }
     }
 

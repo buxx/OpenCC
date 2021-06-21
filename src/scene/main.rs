@@ -44,6 +44,7 @@ use crate::util::angle;
 use crate::{
     scene, Angle, FrameI, Message, Meters, Offset, SceneItemId, ScenePoint, SquadId, WindowPoint,
 };
+use crate::behavior::util::take_cover_messages;
 
 #[derive(PartialEq)]
 enum DebugTerrain {
@@ -80,8 +81,8 @@ pub struct DebugText {
 
 #[derive(Clone)]
 pub struct DebugPoint {
-    frame_i: FrameI,
-    scene_point: ScenePoint,
+    pub frame_i: FrameI,
+    pub scene_point: ScenePoint,
 }
 
 impl DebugText {
@@ -762,21 +763,22 @@ impl MainState {
                         scene_cursor_point,
                         &leader.position,
                     );
-                    let order = match scene_item_prepare_order {
+                    // FIXME BS NOW: add then_order
+                    let then_order = match scene_item_prepare_order {
                         SceneItemPrepareOrder::Defend(_) => {Order::Defend(angle_)}
                         SceneItemPrepareOrder::Hide(_) => {Order::Hide(angle_)}
                         _ => {panic!("Should be here")}
                     };
-                    messages.push(Message::SceneItemMessage(
-                        squad.leader,
-                        SceneItemModifier::SetNextOrder(order.clone()),
-                    ));
-                    messages.push(Message::MainStateMessage(
-                        MainStateModifier::NewOrderMarker(OrderMarker::new(
-                            squad.leader,
-                            &order,
-                        )),
-                    ));
+
+                    // Compute new places according to defend/hide direction
+                    messages.extend(take_cover_messages(
+                        &leader.position,
+                        angle_,
+                        self.frame_i,
+                        squad,
+                        &leader.behavior,
+                        &self.map,
+                    ))
                 }
             }
 
@@ -1009,52 +1011,14 @@ impl MainState {
                     MainStateModifier::LeaderIndicateTakeCover(scene_item_id) => {
                         let leader = self.get_scene_item(scene_item_id);
                         let squad = self.get_squad(&leader.squad_id);
-                        let mut already_used_cover_grid_points: Vec<GridPoint> = vec![];
-                        for (member_id, formation_position) in
-                            squad.member_positions(&leader.position, leader.display_angle)
-                        {
-                            if let Some((cover_grid_point, debug_grid_points)) =
-                                find_cover_grid_point(
-                                    &grid_point_from_scene_point(&formation_position, &self.map),
-                                    &self.map,
-                                    &already_used_cover_grid_points,
-                                )
-                            {
-                                for debug_grid_point in debug_grid_points.iter() {
-                                    new_messages.push(Message::MainStateMessage(
-                                        MainStateModifier::NewDebugPoint(DebugPoint {
-                                            frame_i: self.frame_i + 120,
-                                            scene_point: scene_point_from_grid_point(
-                                                debug_grid_point,
-                                                &self.map,
-                                            ),
-                                        }),
-                                    ))
-                                }
-
-                                let cover_scene_point =
-                                    scene_point_from_grid_point(&cover_grid_point, &self.map);
-                                if let Some(new_order) = match &leader.behavior {
-                                    ItemBehavior::Dead | ItemBehavior::Unconscious => None,
-                                    ItemBehavior::Standing | ItemBehavior::MoveTo(_, _) => {
-                                        Some(Order::MoveTo(cover_scene_point))
-                                    }
-                                    ItemBehavior::MoveFastTo(_, _) => {
-                                        Some(Order::MoveFastTo(cover_scene_point))
-                                    }
-                                    ItemBehavior::EngageSceneItem(_)
-                                    | ItemBehavior::EngageGridPoint(_)
-                                    | ItemBehavior::HideTo(_, _)
-                                    | ItemBehavior::Hide => Some(Order::HideTo(cover_scene_point)),
-                                } {
-                                    already_used_cover_grid_points.push(cover_grid_point);
-                                    new_messages.push(Message::SceneItemMessage(
-                                        member_id,
-                                        SceneItemModifier::SetNextOrder(new_order),
-                                    ));
-                                }
-                            }
-                        }
+                        new_messages.extend(take_cover_messages(
+                            &leader.position,
+                            leader.display_angle,
+                            self.frame_i,
+                            squad,
+                            &leader.behavior,
+                            &self.map,
+                        ))
                     }
                     MainStateModifier::NewDebugPoint(debug_point) => {
                         if self.debug {
@@ -1374,8 +1338,8 @@ impl MainState {
     fn generate_order_marker_sprites(&mut self) -> GameResult {
         for order_marker in self.order_markers.iter() {
             let draw_to_scene_point = self.get_order_marker_scene_point(&order_marker);
-            let angle = self.get_order_marker_angle(&order_marker);
-            let offset = self.get_order_marker_offset(&order_marker);
+            let angle = order_marker.get_order_marker_angle();
+            let offset = order_marker.get_order_marker_offset();
 
             self.ui_batch.add(order_marker.sprite_info().as_draw_params(
                 &draw_to_scene_point,
@@ -1398,26 +1362,6 @@ impl MainState {
                 let leader = self.get_scene_item(squad.leader);
                 leader.position
             }
-        }
-    }
-
-    fn get_order_marker_offset(&self, order_marker: &OrderMarker) -> Option<Offset> {
-        match &order_marker {
-            OrderMarker::MoveTo(_, _)
-            | OrderMarker::MoveFastTo(_, _)
-            | OrderMarker::HideTo(_, _)
-            | OrderMarker::FireTo(_, _) => None,
-            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => Some(Offset::new(0.5, DISPLAY_DEFEND_Y_OFFSET)),
-        }
-    }
-
-    fn get_order_marker_angle(&self, order_marker: &OrderMarker) -> Angle {
-        match &order_marker {
-            OrderMarker::MoveTo(_, _)
-            | OrderMarker::MoveFastTo(_, _)
-            | OrderMarker::HideTo(_, _)
-            | OrderMarker::FireTo(_, _) => 0.0,
-            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => *angle,
         }
     }
 

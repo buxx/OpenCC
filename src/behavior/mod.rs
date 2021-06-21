@@ -4,6 +4,7 @@ pub mod engagement;
 pub mod movement;
 pub mod order;
 pub mod standing;
+pub mod util;
 
 use crate::physics::GridPoint;
 use crate::{GridPath, SceneItemId, ScenePoint};
