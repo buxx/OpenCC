@@ -22,6 +22,7 @@ pub enum UserEvent {
     BeginDragOrderMarker(SceneItemId),
     MoveDrag,
     ReleaseDrag,
+    SelectSceneItemIds(Vec<SceneItemId>),
 }
 
 pub enum Dragging {

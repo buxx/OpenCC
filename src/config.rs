@@ -56,4 +56,5 @@ pub const DISTANCE_TO_METERS_COEFFICIENT: f32 = 0.3;
 // Grid distance to search cover point
 pub const COVER_DISTANCE: i32 = 5;
 //
+pub const DISPLAY_DEFEND_X_OFFSET: f32 = 0.5;
 pub const DISPLAY_DEFEND_Y_OFFSET: f32 = 1.5;

@@ -1,5 +1,9 @@
 use crate::behavior::order::Order;
-use crate::config::{UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH, DISPLAY_DEFEND_Y_OFFSET};
+use crate::config::{
+    DISPLAY_DEFEND_X_OFFSET, DISPLAY_DEFEND_Y_OFFSET, UI_SPRITE_SHEET_HEIGHT, UI_SPRITE_SHEET_WIDTH,
+};
+use crate::physics::util::apply_angle_on_point;
+use crate::util::Rectangle;
 use crate::{Angle, Offset, SceneItemId, ScenePoint};
 use ggez::graphics;
 use ggez::mint::Point2;
@@ -58,7 +62,10 @@ impl OrderMarker {
             | OrderMarker::MoveFastTo(_, _)
             | OrderMarker::HideTo(_, _)
             | OrderMarker::FireTo(_, _) => None,
-            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => Some(Offset::new(0.5, DISPLAY_DEFEND_Y_OFFSET)),
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => Some(Offset::new(
+                DISPLAY_DEFEND_X_OFFSET,
+                DISPLAY_DEFEND_Y_OFFSET,
+            )),
         }
     }
 
@@ -72,6 +79,19 @@ impl OrderMarker {
             | OrderMarker::Hide(scene_item_id, _) => *scene_item_id,
         }
     }
+
+    pub fn set_angle(&mut self, new_angle: Angle) {
+        match self {
+            OrderMarker::MoveTo(_, _)
+            | OrderMarker::MoveFastTo(_, _)
+            | OrderMarker::HideTo(_, _)
+            | OrderMarker::FireTo(_, _) => {
+                panic!("Should not be called !")
+            }
+            OrderMarker::Defend(_, angle) | OrderMarker::Hide(_, angle) => *angle = new_angle,
+        }
+    }
+
     pub fn set_scene_point(&mut self, new_scene_point: ScenePoint) {
         match self {
             OrderMarker::MoveTo(_, scene_point)
@@ -82,6 +102,18 @@ impl OrderMarker {
                 scene_point.x = new_scene_point.x;
                 scene_point.y = new_scene_point.y
             }
+            OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {
+                panic!("Should not be called !")
+            }
+        }
+    }
+
+    pub fn get_scene_point(&self) -> &ScenePoint {
+        match self {
+            OrderMarker::MoveTo(_, scene_point)
+            | OrderMarker::MoveFastTo(_, scene_point)
+            | OrderMarker::HideTo(_, scene_point)
+            | OrderMarker::FireTo(_, scene_point) => scene_point,
             OrderMarker::Defend(_, _) | OrderMarker::Hide(_, _) => {
                 panic!("Should not be called !")
             }
@@ -194,6 +226,33 @@ impl OrderMarkerSpriteInfo {
             self.width,
             self.height,
         )
+    }
+
+    pub fn rotated_rectangle(
+        &self,
+        from_scene_point: &ScenePoint,
+        rotate_from_point: &ScenePoint,
+        angle: Angle,
+    ) -> Rectangle {
+        let top_left = ScenePoint::new(
+            from_scene_point.x - self.half_width,
+            from_scene_point.y - self.half_height,
+        );
+        let top_right = ScenePoint::new(top_left.x + self.width, top_left.y);
+        let bottom_left = ScenePoint::new(top_left.x, top_left.y + self.height);
+        let bottom_right = ScenePoint::new(top_left.x + self.width, top_left.y + self.height);
+
+        let top_left = apply_angle_on_point(&top_left, rotate_from_point, &angle);
+        let top_right = apply_angle_on_point(&top_right, rotate_from_point, &angle);
+        let bottom_left = apply_angle_on_point(&bottom_left, rotate_from_point, &angle);
+        let bottom_right = apply_angle_on_point(&bottom_right, rotate_from_point, &angle);
+
+        Rectangle {
+            top_left,
+            top_right,
+            bottom_left,
+            bottom_right,
+        }
     }
 
     pub fn contains(&self, draw_to_scene_point: &ScenePoint, point: &ScenePoint) -> bool {
