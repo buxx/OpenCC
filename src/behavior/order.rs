@@ -1,6 +1,6 @@
 use crate::{Angle, ScenePoint};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Order {
     MoveTo(ScenePoint),
     MoveFastTo(ScenePoint),

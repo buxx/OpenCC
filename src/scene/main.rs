@@ -577,20 +577,12 @@ impl MainState {
                             Order::HideTo(_) => {
                                 Some(SceneItemPrepareOrder::Sneak(scene_item.squad_id))
                             }
-                            _ => None,
-                        }
-                    // Probably defending / hiding ?
-                    } else {
-                        match scene_item.behavior {
-                            ItemBehavior::Standing => {
-                                self.scene_item_prepare_order =
-                                    Some(SceneItemPrepareOrder::Defend(scene_item.squad_id));
+                            Order::Defend(_) => {
+                                Some(SceneItemPrepareOrder::Defend(scene_item.squad_id))
                             }
-                            ItemBehavior::Hide => {
-                                self.scene_item_prepare_order =
-                                    Some(SceneItemPrepareOrder::Hide(scene_item.squad_id));
+                            Order::Hide(_) => {
+                                Some(SceneItemPrepareOrder::Hide(scene_item.squad_id))
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -803,9 +795,6 @@ impl MainState {
                         SceneItemPrepareOrder::Hide(_) => Order::Hide(angle_),
                         _ => panic!("Should not be here"),
                     };
-                    messages.push(Message::MainStateMessage(
-                        MainStateModifier::RemoveOrderMarker(squad.leader),
-                    ));
                     messages.push(Message::MainStateMessage(
                         MainStateModifier::NewOrderMarker(OrderMarker::new(squad.leader, &order)),
                     ));

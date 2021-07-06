@@ -13,6 +13,7 @@ pub fn digest_defend_order(
     scene_item_modifiers.push(SceneItemModifier::LeaderIndicateTakeCover);
     scene_item_modifiers.push(SceneItemModifier::ChangeBehavior(ItemBehavior::Standing));
     scene_item_modifiers.push(SceneItemModifier::ChangeLookingDirection(*angle));
+    scene_item_modifiers.push(SceneItemModifier::SwitchToNextOrder);
 
     scene_item_modifiers
 }
@@ -27,6 +28,7 @@ pub fn digest_hide_order(
     scene_item_modifiers.push(SceneItemModifier::LeaderIndicateTakeCover);
     scene_item_modifiers.push(SceneItemModifier::ChangeBehavior(ItemBehavior::Hide));
     scene_item_modifiers.push(SceneItemModifier::ChangeLookingDirection(*angle));
+    scene_item_modifiers.push(SceneItemModifier::SwitchToNextOrder);
 
     scene_item_modifiers
 }

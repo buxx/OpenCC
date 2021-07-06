@@ -380,9 +380,6 @@ pub fn apply_scene_item_modifier(
             }
             scene_item.is_leader = false;
             messages.push(Message::MainStateMessage(
-                MainStateModifier::RemoveOrderMarker(scene_item.id),
-            ));
-            messages.push(Message::MainStateMessage(
                 MainStateModifier::ElectNewSquadLeader(scene_item.id),
             ));
         }
@@ -422,9 +419,11 @@ pub fn apply_scene_item_modifier(
             MainStateModifier::SquadLeaderGiveFollowOrder(scene_item.id),
         )),
         SceneItemModifier::SetIsLeader => scene_item.is_leader = true,
-        SceneItemModifier::LeaderIndicateTakeCover => messages.push(MainStateMessage(
-            MainStateModifier::LeaderIndicateTakeCover(scene_item.id),
-        )),
+        SceneItemModifier::LeaderIndicateTakeCover => {
+            messages.push(MainStateMessage(
+                MainStateModifier::LeaderIndicateTakeCover(scene_item.id),
+            ))
+        },
     }
 
     messages
